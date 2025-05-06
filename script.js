@@ -1267,11 +1267,14 @@ function showGameOver() {
     const msg = document.createElement('div');
     msg.id = 'gameOverMsg';
     const totalTime = ((performance.now() - gameStartTime) / 1000).toFixed(1);
+    // Modus-Name hübsch formatieren
+    const modeName = selectedMode ? selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1) : '';
     msg.innerHTML = `
         <div style="margin-bottom:20px;text-align:center;">
             <div style="font-size:1.2em;margin-bottom:12px;">Game Over!</div>
             <div style="font-size:0.8em;color:#aaa;margin-bottom:8px;">You survived for ${totalTime} seconds</div>
             <div style="font-size:0.8em;color:#aaa;">Reached Level ${difficultyLevel + 1}</div>
+            <div style="font-size:0.8em;color:#19f3ff;margin-top:8px;">Mode: <b>${modeName}</b></div>
         </div>
     `;
     msg.style.position = 'fixed';
@@ -1808,6 +1811,20 @@ function updateGameStatsDisplay(total, penalty) {
     if (totalTimeSpan) totalTimeSpan.textContent = total.toFixed(1);
     const levelDisplaySpan = document.getElementById('levelDisplay');
     if (levelDisplaySpan) levelDisplaySpan.textContent = (difficultyLevel + 1);
+    // Modus-Anzeige ergänzen
+    let modeSpan = document.getElementById('modeDisplay');
+    if (!modeSpan) {
+        const statsDiv = document.getElementById('game-stats');
+        if (statsDiv) {
+            modeSpan = document.createElement('div');
+            modeSpan.id = 'modeDisplay';
+            statsDiv.appendChild(modeSpan);
+        }
+    }
+    if (modeSpan) {
+        const modeName = selectedMode ? selectedMode.charAt(0).toUpperCase() + selectedMode.slice(1) : '';
+        modeSpan.innerHTML = `Mode: <b>${modeName}</b>`;
+    }
 }
 
 function updateTouchBar() {
