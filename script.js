@@ -163,14 +163,15 @@ restartButton.style.background = '#4caf50';
 restartButton.style.color = '#fff';
 restartButton.style.border = 'none';
 restartButton.style.borderRadius = '8px';
+restartButton.classList.add('neon-restart-btn');
 document.body.appendChild(restartButton);
 
 // Bomb Button
 const bombButton = document.createElement('button');
 bombButton.textContent = '💣';
 bombButton.style.position = 'fixed';
-bombButton.style.bottom = '20px';
-bombButton.style.right = '20px';
+bombButton.style.top = '50%';
+bombButton.style.right = '24px';
 bombButton.style.width = '20px';
 bombButton.style.height = '20px';
 bombButton.style.padding = '0';
@@ -185,6 +186,7 @@ bombButton.style.display = 'none'; // Initially hidden
 bombButton.style.transition = 'all 0.3s ease';
 bombButton.style.overflow = 'hidden';
 bombButton.style.zIndex = '3000';
+bombButton.style.transform = 'translateY(-50%)';
 document.body.appendChild(bombButton);
 
 let bombCooldown = false;
@@ -194,6 +196,8 @@ let lastBombTime = 0;
 restartButton.addEventListener('click', () => {
     document.getElementById('startScreen').style.display = 'flex';
     gameOver = true;
+    bombButton.style.display = 'none';
+    resetBombBtnPosition();
 });
 
 bombButton.addEventListener('click', () => {
@@ -1081,6 +1085,108 @@ const MAX_WORDS = 10;
 const MAX_POLYGONS = 10;
 const MAX_LINES = 8;
 
+// === Startbildschirm-Linien-Animation ===
+let startScreenLines = [];
+let startScreenLinesActive = false;
+let startScreenLinesAnimationFrame = null;
+
+function createStartScreenLine(canvas) {
+    const sides = ['top', 'bottom', 'left', 'right'];
+    const startSide = sides[Math.floor(Math.random() * sides.length)];
+    let x, y, dx, dy;
+    const speed = 1.5 + Math.random() * 2.5;
+    if (startSide === 'top') {
+        x = Math.random() * canvas.width;
+        y = 0;
+        dx = (Math.random() - 0.5) * speed;
+        dy = speed;
+    } else if (startSide === 'bottom') {
+        x = Math.random() * canvas.width;
+        y = canvas.height;
+        dx = (Math.random() - 0.5) * speed;
+        dy = -speed;
+    } else if (startSide === 'left') {
+        x = 0;
+        y = Math.random() * canvas.height;
+        dx = speed;
+        dy = (Math.random() - 0.5) * speed;
+    } else {
+        x = canvas.width;
+        y = Math.random() * canvas.height;
+        dx = -speed;
+        dy = (Math.random() - 0.5) * speed;
+    }
+    const color = `hsl(${Math.floor(Math.random()*360)}, 80%, 60%)`;
+    return { x, y, dx, dy, color };
+}
+
+function startScreenLinesAnimation() {
+    const canvas = document.getElementById('startBgCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    // Größe anpassen
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (!startScreenLinesActive) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Linien bewegen und zeichnen
+    for (const line of startScreenLines) {
+        line.x += line.dx;
+        line.y += line.dy;
+        // Invertieren an den Rändern
+        if (line.x < 0 || line.x > canvas.width) line.dx *= -1;
+        if (line.y < 0 || line.y > canvas.height) line.dy *= -1;
+        ctx.save();
+        ctx.strokeStyle = line.color;
+        ctx.lineWidth = 3.5;
+        ctx.globalAlpha = 0.95;
+        ctx.shadowColor = line.color;
+        ctx.shadowBlur = 24;
+        ctx.beginPath();
+        ctx.moveTo(line.x, line.y);
+        ctx.lineTo(line.x - line.dx * 40, line.y - line.dy * 40);
+        ctx.stroke();
+        ctx.restore();
+    }
+    startScreenLinesAnimationFrame = requestAnimationFrame(startScreenLinesAnimation);
+}
+
+function startStartScreenLines() {
+    const canvas = document.getElementById('startBgCanvas');
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    startScreenLines = [];
+    for (let i = 0; i < 6; i++) {
+        startScreenLines.push(createStartScreenLine(canvas));
+    }
+    startScreenLinesActive = true;
+    startScreenLinesAnimation();
+    window.addEventListener('resize', resizeStartScreenLinesCanvas);
+}
+
+function stopStartScreenLines() {
+    startScreenLinesActive = false;
+    if (startScreenLinesAnimationFrame) {
+        cancelAnimationFrame(startScreenLinesAnimationFrame);
+        startScreenLinesAnimationFrame = null;
+    }
+    const canvas = document.getElementById('startBgCanvas');
+    if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+    window.removeEventListener('resize', resizeStartScreenLinesCanvas);
+}
+
+function resizeStartScreenLinesCanvas() {
+    const canvas = document.getElementById('startBgCanvas');
+    if (!canvas) return;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+// === Integration in Startscreen-Logik ===
 function setupStartScreen() {
     const startScreen = document.getElementById('startScreen');
     if (!startScreen) return;
@@ -1089,32 +1195,14 @@ function setupStartScreen() {
     initAudio();
     updateHeartbeat();
 
-    // Add game rules
-    const rulesDiv = document.createElement('div');
-    rulesDiv.style.position = 'absolute';
-    rulesDiv.style.top = '20px';
-    rulesDiv.style.left = '50%';
-    rulesDiv.style.transform = 'translateX(-50%)';
-    rulesDiv.style.color = 'white';
-    rulesDiv.style.fontSize = '24px';
-    rulesDiv.style.textAlign = 'center';
-    rulesDiv.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
-    rulesDiv.style.lineHeight = '1.5';
-    rulesDiv.innerHTML = `
-        <div style=\"margin-bottom: 20px;\">GAME RULES:</div>
-        <div style=\"margin-bottom: 10px;\">Don't stop moving your mouse - or penalty</div>
-        <div style=\"margin-bottom: 10px;\">Only touch the black screen - or penalty</div>
-        <div style=\"margin-bottom: 10px;\">Don't touch any objects - or penalty</div>
-        <div style=\"margin-bottom: 10px; color: #4caf50;\">Fast mouse movements will refill your penalty bar!</div>
-        <div style=\"margin-top: 18px; color: #ff4444; font-size: 0.95em;\">And yes, there is a bomb button at level 2. Use it to clear the screen!</div>
-        <div style=\"margin-top: 32px; margin-bottom: 48px; font-size: 1.1em; color: #ffeb3b; text-shadow: 0 2px 8px #000; font-weight: bold;\">Higher difficulty = more shapes, images, and words!</div>
-    `;
-    startScreen.appendChild(rulesDiv);
+    // Starte Linienanimation für Startscreen
+    startStartScreenLines();
 
-    const btns = startScreen.querySelectorAll('.modeBtn');
-    btns.forEach(btn => {
-        btn.onclick = () => {
-            selectedMode = btn.dataset.mode;
+    // Schwierigkeitskarten als Buttons
+    const cards = startScreen.querySelectorAll('.difficulty-card');
+    cards.forEach(card => {
+        card.onclick = () => {
+            selectedMode = card.dataset.mode;
             const mode = MODES[selectedMode];
             MAX_TOUCH_TIME = mode.time;
             penaltyTime = 0;
@@ -1123,7 +1211,6 @@ function setupStartScreen() {
             lastFrameTime = gameStartTime;
             difficultyLevel = 0;
             lastDifficultyIncrease = performance.now();
-            
             // Setze initiale Elemente basierend auf Modus
             processCount = mode.initialElements.processes;
             processes = Array(processCount).fill().map(() => createProcess());
@@ -1131,7 +1218,6 @@ function setupStartScreen() {
             window.maxWordsOnCanvas = mode.initialElements.words;
             window.maxPolygons = mode.initialElements.polygons;
             window.maxGlobalLines = mode.initialElements.lines;
-            
             randomImages = [];
             randomWordsOnCanvas = [];
             filledPolygons = [];
@@ -1144,10 +1230,10 @@ function setupStartScreen() {
             lastWordCreation = performance.now() - wordCreationInterval;
             lastPolygonCreation = performance.now() - polygonInterval;
             lastGlobalLineCreation = performance.now() - globalLineInterval;
-            
             initAudio();
             updateHeartbeat();
-            
+            // Stoppe Startscreen-Linienanimation
+            stopStartScreenLines();
             const msg = document.getElementById('gameOverMsg');
             if (msg) msg.remove();
             startScreen.style.display = 'none';
@@ -1216,6 +1302,8 @@ function showGameOver() {
     };
     msg.appendChild(btn);
     document.body.appendChild(msg);
+    bombButton.style.display = 'none';
+    resetBombBtnPosition();
 }
 
 function animate() {
@@ -1732,48 +1820,56 @@ function updateTouchBar() {
     else bar.style.background = 'linear-gradient(90deg,#f44336,#900)';
 }
 
-// --- Bomb Button Float-Away Logic ---
-const BOMB_BTN_SIZE = 20;
-const BOMB_BTN_MARGIN = 20;
-let bombBtnPos = { x: window.innerWidth - BOMB_BTN_SIZE - BOMB_BTN_MARGIN, y: window.innerHeight - BOMB_BTN_SIZE - BOMB_BTN_MARGIN };
+animate(); 
 
-function setBombBtnPosition(x, y) {
-    bombBtnPos.x = Math.max(BOMB_BTN_MARGIN, Math.min(x, window.innerWidth - BOMB_BTN_SIZE - BOMB_BTN_MARGIN));
-    bombBtnPos.y = Math.max(BOMB_BTN_MARGIN, Math.min(y, window.innerHeight - BOMB_BTN_SIZE - BOMB_BTN_MARGIN));
-    bombButton.style.left = bombBtnPos.x + 'px';
-    bombButton.style.top = bombBtnPos.y + 'px';
-    bombButton.style.right = '';
+// --- Bomb Button Float-Away Logic (zentriert rechts als Grundposition) ---
+const BOMB_BTN_SIZE = 20;
+const BOMB_BTN_MARGIN = 24;
+let bombBtnBaseTop = '50%';
+let bombBtnBaseRight = BOMB_BTN_MARGIN + 'px';
+let bombBtnBaseTransform = 'translateY(-50%)';
+let bombBtnFloatTimeout = null;
+
+function resetBombBtnPosition() {
+    bombButton.style.top = bombBtnBaseTop;
+    bombButton.style.right = bombBtnBaseRight;
+    bombButton.style.left = '';
     bombButton.style.bottom = '';
+    bombButton.style.transform = bombBtnBaseTransform;
 }
 
-// Initial position
-setBombBtnPosition(bombBtnPos.x, bombBtnPos.y);
+resetBombBtnPosition();
 
-window.addEventListener('resize', () => {
-    setBombBtnPosition(bombBtnPos.x, bombBtnPos.y);
-});
+window.addEventListener('resize', resetBombBtnPosition);
 
 let lastNopeTime = 0;
 window.addEventListener('mousemove', (e) => {
     if (bombButton.style.display === 'none') return;
-    const mouseX = e.clientX;
-    const mouseY = e.clientY;
-    const btnCenterX = bombBtnPos.x + BOMB_BTN_SIZE / 2;
-    const btnCenterY = bombBtnPos.y + BOMB_BTN_SIZE / 2;
-    const dist = Math.hypot(mouseX - btnCenterX, mouseY - btnCenterY);
-    if (dist < 80) {
-        // Calculate direction away from mouse
-        let dx = btnCenterX - mouseX;
-        let dy = btnCenterY - mouseY;
+    const btnRect = bombButton.getBoundingClientRect();
+    const btnCenterX = btnRect.left + btnRect.width / 2;
+    const btnCenterY = btnRect.top + btnRect.height / 2;
+    const dist = Math.hypot(e.clientX - btnCenterX, e.clientY - btnCenterY);
+    // Weniger nervig: erst ab 48px Distanz, weniger Flucht
+    if (dist < 48) {
+        let dx = btnCenterX - e.clientX;
+        let dy = btnCenterY - e.clientY;
         let len = Math.hypot(dx, dy) || 1;
         dx /= len;
         dy /= len;
-        // Move a bit away (proportional to how close the mouse is)
-        let moveDist = 60 * (1 - dist / 80);
-        let newX = bombBtnPos.x + dx * moveDist;
-        let newY = bombBtnPos.y + dy * moveDist;
-        setBombBtnPosition(newX, newY);
-
+        // Weniger Flucht: max 28px
+        let moveDist = 28 * (1 - dist / 48);
+        let offsetX = dx * moveDist;
+        let offsetY = dy * moveDist;
+        // Begrenzung: Button darf nicht aus dem Fenster
+        const maxOffsetX = window.innerWidth - btnRect.right - 2;
+        const minOffsetX = -(btnRect.left - 2);
+        const maxOffsetY = window.innerHeight - btnRect.bottom - 2;
+        const minOffsetY = -(btnRect.top - 2);
+        offsetX = Math.max(minOffsetX, Math.min(offsetX, maxOffsetX));
+        offsetY = Math.max(minOffsetY, Math.min(offsetY, maxOffsetY));
+        bombButton.style.transform = `translate(${offsetX}px, calc(-50% + ${offsetY}px))`;
+        if (bombBtnFloatTimeout) clearTimeout(bombBtnFloatTimeout);
+        bombBtnFloatTimeout = setTimeout(resetBombBtnPosition, 600);
         // --- Floating NOPE Text ---
         const now = Date.now();
         if (now - lastNopeTime > 600) {
@@ -1793,9 +1889,8 @@ window.addEventListener('mousemove', (e) => {
             nopeSpan.style.transition = 'transform 0.7s cubic-bezier(.4,1.6,.6,1), opacity 0.7s linear';
             nopeSpan.style.opacity = '1';
             document.body.appendChild(nopeSpan);
-            // Animate away from mouse (same direction as button)
             setTimeout(() => {
-                nopeSpan.style.transform = `translate(${dx*60}px, ${dy*60}px)`;
+                nopeSpan.style.transform = `translate(${dx*28}px, ${dy*28}px)`;
                 nopeSpan.style.opacity = '0';
             }, 10);
             setTimeout(() => {
@@ -1803,6 +1898,4 @@ window.addEventListener('mousemove', (e) => {
             }, 800);
         }
     }
-});
-
-animate(); 
+}); 
