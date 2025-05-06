@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamische Kunst</title>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+        #artCanvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: auto;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #1a1a1a;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+        }
+        canvas {
+            background: #000;
+            border-radius: 8px;
+        }
+        .controls {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            color: white;
+        }
+        .control-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="range"] {
+            width: 200px;
+        }
+        .value-display {
+            color: #888;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="artCanvas" width="800" height="600"></canvas>
+        <div class="controls">
+            <div class="control-group">
+                <label for="processes">Anzahl Prozesse</label>
+                <input type="range" id="processes" min="1" max="10" value="1">
+                <span class="value-display">1</span>
+            </div>
+        </div>
+    </div>
+    <div id="game-stats" style="position:fixed;left:20px;top:20px;z-index:10;color:#fff;font-size:1.3em;font-family:Arial,sans-serif;text-shadow:0 0 6px #000;">
+        <div>Total Time: <span id="totalTime">0.00</span> s</div>
+        <div>Level: <span id="levelDisplay">1</span></div>
+    </div>
+    <div id="touchBarContainer" style="position:fixed;left:0;right:0;bottom:0;height:32px;background:#222;z-index:20;">
+        <div id="touchBar" style="height:100%;width:100%;background:linear-gradient(90deg,#4caf50,#ffeb3b,#f44336);transition:width 0.2s;"></div>
+    </div>
+    <div id="startScreen" style="position:fixed;left:0;top:0;width:100vw;height:100vh;background:#111d;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div style="color:#fff;font-size:2.2em;margin-bottom:32px;text-shadow:0 2px 12px #000;">Select Difficulty</div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap;justify-content:center;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <button class="modeBtn" data-mode="easy" style="font-size:1.2em;padding:16px 36px;background:#4caf50;color:#fff;border:none;border-radius:10px;cursor:pointer;">Easy</button>
+                <div style="color:#fff;font-size:0.9em;text-align:center;max-width:200px;">30 seconds touch time.<br>Perfect for beginners!</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <button class="modeBtn" data-mode="medium" style="font-size:1.2em;padding:16px 36px;background:#ffeb3b;color:#222;border:none;border-radius:10px;cursor:pointer;">Medium</button>
+                <div style="color:#fff;font-size:0.9em;text-align:center;max-width:200px;">20 seconds touch time.<br>For experienced players.</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <button class="modeBtn" data-mode="hard" style="font-size:1.2em;padding:16px 36px;background:#ff9800;color:#fff;border:none;border-radius:10px;cursor:pointer;">Hard</button>
+                <div style="color:#fff;font-size:0.9em;text-align:center;max-width:200px;">12 seconds touch time.<br>Challenge yourself!</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+                <button class="modeBtn" data-mode="hardcore" style="font-size:1.2em;padding:16px 36px;background:#f44336;color:#fff;border:none;border-radius:10px;cursor:pointer;">Hardcore</button>
+                <div style="color:#fff;font-size:0.9em;text-align:center;max-width:200px;">6 seconds touch time.<br>For the brave ones!</div>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
